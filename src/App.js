@@ -3,29 +3,33 @@ import { BrowserRouter as Router, Route } from 'react-router-dom';
 import Todos from './components/Todos';
 import AddTodo from './components/AddTodo';
 import Header from './components/layout/Header';
-import About from './components/pages/About'
+import Alert from './components/layout/Alert';
+import About from './components/pages/About';
+import uuid from 'uuid'
+import Axios from 'axios';
+
 import './App.css';
-import uuid from 'uuid';
+
 
 class App extends Component {
   state = {
-    todos: [
-      {
-        id: 1,
-        title: 'Take out the trash',
-        completed: false
-      },
-      {
-        id: 2,
-        title: 'Dinner with wife',
-        completed: true
-      },
-      {
-        id: 3,
-        title: 'Meeting with boss',
-        completed: false
+    todos: [],
+    alert: ''
+  }
+
+  componentDidMount() {
+    Axios.get('https://jsonplaceholder.typicode.com/todos?_limit=10')
+      .then(res => this.setState({ todos: res.data }))
+  }
+
+  clearAlert = () => {
+    setTimeout(
+      function() {
+          this.setState({alert: ""});
       }
-    ]
+      .bind(this),
+      3000
+    );
   }
 
   // Toggle Complete
@@ -40,7 +44,8 @@ class App extends Component {
 
   //Delete Todo
   delTodo = (id) => {
-    this.setState({ todos: [...this.state.todos.filter(todo => todo.id != id)]})
+    Axios.delete(`https://jsonplaceholder.typicode.com/todos/${id}`)
+      .then(res =>  this.setState({ todos: [...this.state.todos.filter(todo => todo.id != id)]}));
   }
 
   addTodo = (title) => {
@@ -49,7 +54,14 @@ class App extends Component {
       title,
       completed: false
     }
-    this.setState({ todos: [...this.state.todos, newTodo] })
+
+    Axios.post('https://jsonplaceholder.typicode.com/todos', newTodo)
+      .then(res => {
+        this.setState({alert: "New todo successfully created!"});
+        this.clearAlert();
+      })
+
+    this.setState({ todos: [...this.state.todos, newTodo]})  
   }
 
   render() {
@@ -58,6 +70,7 @@ class App extends Component {
         <div>
           <div className="container">
             <Header />
+            <Alert alert={this.state.alert} />
             <Route exact path="/" render={props => (
               <React.Fragment>
                 <AddTodo addTodo={this.addTodo} />
